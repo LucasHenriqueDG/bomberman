@@ -1,0 +1,7 @@
+messages:
+  command-usage-message: "Please provide the correct arguments for this command:
+  \n/bomberman join - Join a bomberman game.
+  \n/bomberman leave - Leaves a bomberman game.
+  \n/bomberman stats - Sees your current bomberman stats."
+  player-join-queue-message: "[Bomberman] You have joined the queue to play a bomberman game when it is available."
+  eliminated-message: "[Bomberman] %player% was eliminated by %bomber%"

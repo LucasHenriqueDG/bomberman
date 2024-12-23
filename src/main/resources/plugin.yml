@@ -1,0 +1,7 @@
+name: Bomberman
+version: '1.0'
+main: me.luhen.bomberman.Bomberman
+api-version: '1.18'
+authors: [ LuHen ]
+commands:
+  bomberman: {}
