@@ -53,6 +53,7 @@ class Bomberman : JavaPlugin() {
         server.pluginManager.registerEvents(CommandListener(), this)
         server.pluginManager.registerEvents(PlayerDamageListener(), this)
         server.pluginManager.registerEvents(PlayerDropItemListener(), this)
+        server.pluginManager.registerEvents(HungerListener(), this)
 
 
     }
