@@ -6,7 +6,6 @@ import me.luhen.bomberman.data.LandMine
 import me.luhen.bomberman.enums.BombType
 import me.luhen.bomberman.events.custom.PlayerPlaceBombEvent
 import me.luhen.bomberman.events.custom.TriggerBombEvent
-import me.luhen.bomberman.mechanics.PlayerManagement
 import me.luhen.bomberman.utils.Utils
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -30,13 +29,13 @@ class InteractionListener: Listener {
 
                 game?.let {
 
-                val clickedBlock = event.clickedBlock
+                    val clickedBlock = event.clickedBlock
 
-                val itemInHand = event.item
+                    val itemInHand = event.item
 
-                val blockFaceVector = event.blockFace.direction
+                    val blockFaceVector = event.blockFace.direction
 
-                val faceBlock = clickedBlock?.location?.add(blockFaceVector)!!
+                    val faceBlock = clickedBlock?.location?.add(blockFaceVector)!!
 
                     when (itemInHand?.type) {
 
@@ -45,7 +44,7 @@ class InteractionListener: Listener {
 
                             if (game.canPlaceBomb(player, BombType.BOMB)) {
 
-                                if (faceBlock.y.toInt() == game.corner1?.blockY) {
+                                if (faceBlock.y.toInt() == game.corner1.blockY) {
 
                                     game.bombermans[player]?.let { bomberman ->
 
@@ -70,7 +69,7 @@ class InteractionListener: Listener {
 
                             if (game.canPlaceBomb(player, BombType.LANDMINE)) {
 
-                                if ((clickedBlock.y + 1) == game.corner1?.blockY) {
+                                if ((clickedBlock.y + 1) == game.corner1.blockY) {
 
                                     game.bombermans[player]?.let { it.landMines -= 1 }
 
@@ -123,13 +122,11 @@ class InteractionListener: Listener {
                         //Using the clock
                         (Material.CLOCK) -> {
 
-                            if (game.canPlaceBomb(event.player, BombType.BOMB)) {
-                                val playerBombs = game.placedBombs.filter { it.value.bomberman.player == event.player }.values
-
-                                playerBombs.forEach { bomb ->
-                                    Bukkit.getPluginManager().callEvent(TriggerBombEvent(bomb, game))
-                                }
-
+                            val playerBombs =
+                                game.placedBombs.filter { it.value.bomberman.player == event.player }.values.toList()
+                            playerBombs.forEach { bomb ->
+                                Bukkit.getPluginManager().callEvent(TriggerBombEvent(bomb, game))
+                                game.bombermans[player]?.let { it.bombs += 1 }
                             }
 
                         }
@@ -140,6 +137,17 @@ class InteractionListener: Listener {
 
                 }
 
+            } else if(event.action == Action.RIGHT_CLICK_AIR){
+                if(event.player.inventory.itemInMainHand.type == Material.CLOCK){
+                    game?.let {
+                        val playerBombs =
+                            game.placedBombs.filter { it.value.bomberman.player == event.player }.values.toList()
+                        playerBombs.forEach { bomb ->
+                            Bukkit.getPluginManager().callEvent(TriggerBombEvent(bomb, game))
+                            game.bombermans[player]?.let { it.bombs += 1 }
+                        }
+                    }
+                }
             }
 
             event.isCancelled = true

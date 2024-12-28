@@ -68,6 +68,17 @@ object CreateConfig {
         config.set("bomb-time", 2.5)
         config.set("wall-block", "oak_log")
 
+        config.set("shovel-chance", 30)
+        config.set("boots-chance", 30)
+        config.set("landmine-chance", 50)
+        config.set("bomb-chance", 70)
+        config.set("clock-chance", 30)
+        config.set("speed-chance", 50)
+        config.set("blindness-chance", 70)
+        config.set("life-chance", 10)
+
+
+
         config.save(outputFile)
 
 

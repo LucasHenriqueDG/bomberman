@@ -62,7 +62,9 @@ class TriggerBombListener: Listener {
 
                     } else if (blockTemp.type == Material.valueOf(event.game.blockToBreak)) {
 
-                        blockTemp.type = Material.AIR // Destroy the oak leaves
+                        blockTemp.type = Material.FIRE // Destroy the block
+
+                        fireBlocks.add(Utils.locationInInt(blockTemp.location))
 
                         Bukkit.getPluginManager().callEvent(DropPerkEvent(direction, event.game))
 

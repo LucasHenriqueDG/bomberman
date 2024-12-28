@@ -12,10 +12,21 @@ class GameItems(game: Game){
     }
 
     lateinit var bomb: ItemStack
-    lateinit var boots: ItemStack
-    lateinit var shovel: ItemStack
-    lateinit var landMine: ItemStack
-    lateinit var clock: ItemStack
+    private lateinit var boots: ItemStack
+    private lateinit var shovel: ItemStack
+    private lateinit var landMine: ItemStack
+    private lateinit var clock: ItemStack
+
+    private val bombChance = game.gameFile.getInt("bomb-chance")
+    private val bootsChance = game.gameFile.getInt("boots-chance")
+    private val shovelChance = game.gameFile.getInt("shovel-chance")
+    private val landmineChance = game.gameFile.getInt("landmine-chance")
+    private val clockChance = game.gameFile.getInt("clock-chance")
+    private val speedChance = game.gameFile.getInt("speed-chance")
+    private val blindChance = game.gameFile.getInt("blindness-chance")
+    private val lifeChance = game.gameFile.getInt("life-chance")
+
+    lateinit var chances: Map<ItemStack, Int>
 
     private val bootsName = game.gameFile.getString("boots-name")
     private val shovelName = game.gameFile.getString("shovel-name")
@@ -60,6 +71,19 @@ class GameItems(game: Game){
         shovel = shovelTemp
         landMine = landMineTemp
         clock = clockTemp
+
+        val chancesTemp = mapOf(
+            Pair(bomb, bombChance),
+            Pair(boots, bootsChance),
+            Pair(shovel, shovelChance),
+            Pair(landMine, landmineChance),
+            Pair(clock, clockChance),
+            Pair(ItemStack(Material.FEATHER), speedChance),
+            Pair(ItemStack(Material.WITHER_SKELETON_SKULL), blindChance),
+            Pair(ItemStack(Material.NETHER_STAR), lifeChance)
+        )
+
+        chances = chancesTemp
 
     }
 

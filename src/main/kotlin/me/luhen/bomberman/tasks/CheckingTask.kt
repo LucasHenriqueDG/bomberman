@@ -29,6 +29,8 @@ class CheckingTask(val game: Game): BukkitRunnable() {
                 if (blockBelow.type == Material.FIRE) {
                     // Player is standing above fire
 
+                    player.key.fireTicks = 0
+
                     if (!bomberman.isInvincible) {
 
                         if (bomberman.lifes == 1) {
@@ -53,6 +55,8 @@ class CheckingTask(val game: Game): BukkitRunnable() {
                     }
 
                 } else if (blockBelow.type == Material.STONE_PRESSURE_PLATE) {
+
+                    player.key.fireTicks = 0
 
                     if (!bomberman.isInvincible) {
 
