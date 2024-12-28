@@ -1,7 +1,10 @@
 name: Bomberman
-version: '1.0'
+version: ${project.version}
 main: me.luhen.bomberman.Bomberman
 api-version: '1.18'
 authors: [ LuHen ]
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:2.1.0
+
 commands:
   bomberman: {}

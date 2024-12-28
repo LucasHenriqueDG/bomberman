@@ -4,8 +4,11 @@ import me.luhen.bomberman.Bomberman
 import me.luhen.bomberman.data.Bomb
 import me.luhen.bomberman.data.LandMine
 import me.luhen.bomberman.enums.BombType
-import me.luhen.bomberman.tasks.BombTask
+import me.luhen.bomberman.events.custom.PlayerPlaceBombEvent
+import me.luhen.bomberman.events.custom.TriggerBombEvent
+import me.luhen.bomberman.mechanics.PlayerManagement
 import me.luhen.bomberman.utils.Utils
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -53,12 +56,7 @@ class InteractionListener: Listener {
                                             faceBlock
                                         )
 
-                                        BombTask(game, bomb).apply { runTaskLater(Bomberman.instance, 40L) }
-
-                                        bomb.location.block.type = Material.TNT
-
-                                        game.placedBombs[bomb.location] = bomb
-                                        game.bombermans[player]?.let { it.bombs -= 1 }
+                                        Bukkit.getPluginManager().callEvent(PlayerPlaceBombEvent(player, bomb, game))
 
                                     }
 
@@ -83,6 +81,7 @@ class InteractionListener: Listener {
                                     bomberman?.let {
                                         val landMine = LandMine(bomberman, faceBlock)
                                         game.placedLandMines[Utils.locationInInt(faceBlock)] = landMine
+                                        game.fireBlocksToCheck[Utils.locationInInt(faceBlock)] = it
                                     }
 
                                 }
@@ -115,6 +114,20 @@ class InteractionListener: Listener {
 
                                 if(game.placedBombs.containsKey(clickedLoc)){
                                     game.placedBombs[clickedLoc]?.let{ game.shovelEffect(it, player) }
+                                }
+
+                            }
+
+                        }
+
+                        //Using the clock
+                        (Material.CLOCK) -> {
+
+                            if (game.canPlaceBomb(event.player, BombType.BOMB)) {
+                                val playerBombs = game.placedBombs.filter { it.value.bomberman.player == event.player }.values
+
+                                playerBombs.forEach { bomb ->
+                                    Bukkit.getPluginManager().callEvent(TriggerBombEvent(bomb, game))
                                 }
 
                             }

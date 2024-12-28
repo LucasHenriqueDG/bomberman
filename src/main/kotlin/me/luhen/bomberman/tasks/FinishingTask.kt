@@ -11,14 +11,17 @@ class FinishingTask(val game: Game): BukkitRunnable() {
     override fun run() {
 
         val config = game.gameFile
+        val players = game.players.toList()
+        val spectators = game.spectators.toList()
 
         //Teleport everyone back or to the podium
-        game.players.forEach{ PlayerManagement.removeFromArena(game, it)}
-        game.spectators.forEach{ PlayerManagement.removeFromArena(game, it)}
+        players.forEach{ PlayerManagement.removeFromArena(game, it)}
+        spectators.forEach{ PlayerManagement.removeFromArena(game, it)}
 
+        game.bombermans.clear()
         //Sets this game arena as available again
         Bomberman.instance.currentGames.remove(game)
-        Bomberman.instance.gameFiles[config] = false
+        Bomberman.instance.gameFiles[config.getString("arena-name").toString()] = false
 
         //Check for players on queue
         if(Bomberman.instance.playersOnQueue.size >= 1){

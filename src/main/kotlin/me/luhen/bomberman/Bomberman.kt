@@ -1,25 +1,25 @@
 package me.luhen.bomberman
 
 import me.luhen.bomberman.commands.BombermanCommand
-import me.luhen.bomberman.events.InteractionListener
-import me.luhen.bomberman.events.PickupItemListener
-import me.luhen.bomberman.events.PlayerJoinGameListener
-import me.luhen.bomberman.events.PlayerLeaveGameListener
+import me.luhen.bomberman.events.*
 import me.luhen.bomberman.game.Game
+import me.luhen.bomberman.utils.DataUtils
+import me.luhen.bomberman.visual.GameScoreboard
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import java.io.File
 
 class Bomberman : JavaPlugin() {
 
     var audience: BukkitAudiences? = null
     val messages = mutableMapOf<String, String>()
     val currentGames = mutableListOf<Game>()
-    val gameFiles = mutableMapOf<YamlConfiguration, Boolean>()
+    val gameFiles = mutableMapOf<String, Boolean>()
     val playersOnQueue = mutableListOf<Player>()
     val playersPlaying = mutableMapOf<Player, Game>()
+    var isRunning = true
+    val scoreboards = mutableMapOf<Player, GameScoreboard>()
+    val allowedCommands = mutableListOf<String>()
 
     companion object{
         lateinit var instance: Bomberman
@@ -36,14 +36,8 @@ class Bomberman : JavaPlugin() {
 
         saveDefaultConfig()
 
-        val gamesDir = File(dataFolder, "games")
-        if(!gamesDir.exists()){
-            gamesDir.mkdir()
-        }
-        gamesDir.listFiles()?.forEach {
-            val config = YamlConfiguration.loadConfiguration(it)
-            gameFiles[config] = false
-        }
+        DataUtils.updateGameFiles()
+        DataUtils.updateMessages()
 
         getCommand("bomberman")?.setExecutor(BombermanCommand)
 
@@ -51,6 +45,15 @@ class Bomberman : JavaPlugin() {
         server.pluginManager.registerEvents(PickupItemListener(), this)
         server.pluginManager.registerEvents(PlayerJoinGameListener(), this)
         server.pluginManager.registerEvents(PlayerLeaveGameListener(), this)
+        server.pluginManager.registerEvents(PlayerQuitListener(), this)
+        server.pluginManager.registerEvents(DropPerkListener(), this)
+        server.pluginManager.registerEvents(PlayerPlaceBombListener(), this)
+        server.pluginManager.registerEvents(TriggerBombListener(), this)
+        server.pluginManager.registerEvents(CancelInventoryListener(), this)
+        server.pluginManager.registerEvents(CommandListener(), this)
+        server.pluginManager.registerEvents(PlayerDamageListener(), this)
+        server.pluginManager.registerEvents(PlayerDropItemListener(), this)
+
 
     }
 

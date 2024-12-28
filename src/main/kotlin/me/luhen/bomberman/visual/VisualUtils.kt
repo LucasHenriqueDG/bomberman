@@ -4,11 +4,12 @@ import me.luhen.bomberman.utils.AdventureUtils
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 
 object VisualUtils {
 
-    private fun parseToComponent(string: String): Component {
+    fun parseToComponent(string: String): Component {
 
         return MiniMessage.miniMessage().deserialize(string)
 
@@ -38,19 +39,6 @@ object VisualUtils {
 
     }
 
-    fun sendBossBar(message: String, players: List<Player>, progress: Float, color: BossBar.Color = BossBar.Color.BLUE){
 
-        val component = parseToComponent(message)
-        val audience = AdventureUtils.createAudience(players)
-
-        val bossBar = BossBar.bossBar(
-            component,
-            progress,
-            color,
-            BossBar.Overlay.PROGRESS
-        )
-
-        audience.showBossBar(bossBar)
-    }
 
 }

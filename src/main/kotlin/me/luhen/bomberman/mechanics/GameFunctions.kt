@@ -1,11 +1,13 @@
 package me.luhen.bomberman.mechanics
 
+import com.sun.org.apache.bcel.internal.util.Args
 import me.luhen.bomberman.Bomberman
 import me.luhen.bomberman.data.BombermanPlayer
 import me.luhen.bomberman.enums.GameState
 import me.luhen.bomberman.events.custom.PlayerJoinGameEvent
 import me.luhen.bomberman.game.Game
 import me.luhen.bomberman.utils.Utils
+import me.luhen.bomberman.visual.GameScoreboard
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -17,7 +19,8 @@ object GameFunctions {
 
     fun createNewGame(config: YamlConfiguration, players: List<Player>? = null){
         val newGame = Game(config, GameState.WAITING)
-        Bomberman.instance.gameFiles[config] = true
+        println(config.getString("arena-name"))
+        Bomberman.instance.gameFiles[config.getString("arena-name").toString()] = true
         Bomberman.instance.currentGames.add(newGame)
 
         players?.let { playerList ->
@@ -41,7 +44,7 @@ object GameFunctions {
         for(x in x1..x2){
             for(z in z1..z2){
                 val block = loc1.world?.getBlockAt(x,loc1.y.toInt(),z)
-                if(block?.type == Material.valueOf(blockMaterial)||
+                if(block?.type == Material.valueOf(blockMaterial.uppercase())||
                     block?.type == Material.TNT ||
                     block?.type == Material.STONE_PRESSURE_PLATE){
                     loc1.world!!.getBlockAt(x,loc1.y.toInt(),z).type = Material.AIR
@@ -69,7 +72,7 @@ object GameFunctions {
 
                          if (Random.nextInt(100) <= game.gameFile.getInt("blocks-percentage")) {
 
-                             loc.block.type = Material.valueOf(blockMaterial)
+                             loc.block.type = Material.valueOf(blockMaterial.uppercase())
 
                          } else {
 
@@ -92,6 +95,10 @@ object GameFunctions {
         game.players.forEach{ bomberman ->
             bomberman.teleport(game.teleportLocations.random())
             game.bombermans[bomberman] = BombermanPlayer(bomberman)
+            GameScoreboard(bomberman)
+            Bomberman.instance.scoreboards[bomberman]?.scoreboard?.let {
+                bomberman.scoreboard = it
+            }
 
             //Give the items
             bomberman.inventory.setItem(0, game.items.bomb)

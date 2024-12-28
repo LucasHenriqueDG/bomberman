@@ -6,23 +6,25 @@ import me.luhen.bomberman.data.BombermanPlayer
 import me.luhen.bomberman.data.LandMine
 import me.luhen.bomberman.enums.BombType
 import me.luhen.bomberman.enums.GameState
+import me.luhen.bomberman.events.custom.TriggerBombEvent
 import me.luhen.bomberman.items.GameItems
 import me.luhen.bomberman.mechanics.GameFunctions
 import me.luhen.bomberman.mechanics.PlayerManagement
 import me.luhen.bomberman.tasks.*
+import me.luhen.bomberman.utils.DataUtils
 import me.luhen.bomberman.utils.PlaceholderUtils
 import me.luhen.bomberman.utils.Utils
+import me.luhen.bomberman.visual.GameBossBar
 import me.luhen.bomberman.visual.VisualUtils
+import net.kyori.adventure.bossbar.BossBar
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
-import org.bukkit.util.Vector
-import java.util.*
 
-class Game(val gameFile: YamlConfiguration, val status: GameState) {
+class Game(val gameFile: YamlConfiguration, var status: GameState) {
 
     var currentDelay = gameFile.getInt("waiting-delay")
     val players = mutableListOf<Player>()
@@ -32,59 +34,74 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
     private var checkingTask: CheckingTask? = null
     private var bossbarTask: BossbarTask? = null
     private var finishingTask: FinishingTask? = null
-    val eliminationsTemp = mutableMapOf<Player, String>()
     val teleportLocations = mutableListOf<Location>()
     val bombermans = mutableMapOf<Player, BombermanPlayer>()
     val items = GameItems(this)
-    val corner1 = gameFile.getLocation("corner1")
-    private val corner2 = gameFile.getLocation("corner2")
+    val entrance = DataUtils.getLocationFromFile(gameFile, "entrance")
+    val corner1 = DataUtils.getLocationFromFile(gameFile, "corner1")
+    private val corner2 = DataUtils.getLocationFromFile(gameFile, "corner2")
     val placedBombs = mutableMapOf<Location, Bomb>()
     val placedLandMines = mutableMapOf<Location, LandMine>()
-    private val blockToBreak = gameFile.getString("block").toString().lowercase()
-    private val barrierBlocks = gameFile.getString("barrier-block").toString().lowercase()
-    private val wallBlock = gameFile.getString("wall-block").toString().lowercase()
+    val blockToBreak = gameFile.getString("block").toString().uppercase()
+    val barrierBlocks = gameFile.getString("barrier-block").toString().uppercase()
+    private val wallBlock = gameFile.getString("wall-block").toString().uppercase()
+    val fireBlocksToCheck = mutableMapOf<Location, BombermanPlayer>()
+    val bossBar = GameBossBar()
 
     init {
 
-        corner1?.let {
-            corner2?.let {
+        corner1.let {
+            corner2.let {
                 GameFunctions.setupArena(this, corner1, corner2)
                 //Start checking for players with a task
                 startWaiting()
-            } ?: errorStarting()
-        } ?: errorStarting()
+            }
+        }
 
     }
 
-    private fun errorStarting(){
-        Bomberman.instance.logger.warning("[Bomberman] Error trying to initialize game. Check your game file.")
-        cancel()
-    }
+    //private fun errorStarting(){
+      //  Bomberman.instance.logger.warning("[Bomberman] Error trying to initialize game. Check your game file.")
+        //cancel()
+   // }
 
     fun start(){
+
+        status = GameState.RUNNING
 
         //Spread the players
         GameFunctions.spreadPlayers(this)
 
         //Start the game
         startRunning()
+        cancelBossbar()
+        bossBar.removeAll(players)
+
 
     }
 
-    private fun cancel(){
+     fun cancel(){
         //Remove all the players
         players.forEach{
             PlayerManagement.removeFromArena(this, it)
         }
-        spectators.forEach{
+         VisualUtils.sendComponent(Bomberman.instance.messages["game-cancelled-message"].toString(), players)
+         spectators.forEach{
             PlayerManagement.removeFromArena(this, it)
         }
-        //Remove Game
-        Bomberman.instance.gameFiles[gameFile] = false
+         VisualUtils.sendComponent(Bomberman.instance.messages["game-cancelled-message"].toString(), spectators)
+         //Remove Game
+        Bomberman.instance.gameFiles[gameFile.getString("arena-name").toString()] = false
         Bomberman.instance.currentGames.remove(this)
+
+         cancelChecking()
+         cancelWarmup()
+         cancelWaiting()
     }
 
     fun finishGame(){
+
+        status = GameState.FINISHING
 
         //Enter finishing mode
         val winner = players.first()
@@ -115,16 +132,20 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
 
         val players = players.size
         val minimumPlayers = gameFile.getInt("start-with")
-        return players >= minimumPlayers
+        return players >= minimumPlayers && Bomberman.instance.isRunning
     }
 
     fun startWarmup() {
+
+        status = GameState.WARMUP
+        bossBar.updateColor(BossBar.Color.GREEN)
         cancelWaiting()
+        currentDelay = gameFile.getInt("warmup-delay")
         VisualUtils.sendComponent(Bomberman.instance.messages["warmup-message"].toString(), players)
 
         //Start Warmup Task
         val task = WarmupTask(this)
-        warmupTask = task.apply { runTaskLater(Bomberman.instance, gameFile.getInt("warmup-delay") * 20L) }
+        warmupTask = task.apply { runTaskLater(Bomberman.instance, (gameFile.getInt("warmup-delay")  + 1 )* 20L) }
 
     }
 
@@ -132,13 +153,20 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
         warmupTask?.cancel()
     }
 
+    private fun cancelBossbar(){
+        bossbarTask?.cancel()
+    }
+
      fun startWaiting() {
+
+         cancelWaiting()
+         cancelBossbar()
 
          currentDelay = gameFile.getInt("waiting-delay")
 
-        //Start Waiting Task
-        val task = BossbarTask(this)
-        bossbarTask = task.apply { runTaskTimer(Bomberman.instance, 20L, 20L) }
+         //Start Waiting Task
+         val task = BossbarTask(this)
+         bossbarTask = task.apply { runTaskTimer(Bomberman.instance, 20L, 20L) }
 
          val task2 = WaitingTask(this)
          waitingTask = task2.apply { runTaskLater(Bomberman.instance, currentDelay * 20L) }
@@ -220,130 +248,11 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
 
     }
 
-    fun checkAndDestroyBomb(bomb: Bomb) {
-
-        val location = bomb.location
-
-        val fireBlocks = mutableListOf<Location>()
-
-        val locationsToCheck = Stack<Location>()
-        locationsToCheck.push(location)
-
-        while(locationsToCheck.isNotEmpty()) {
-
-            val tempLocation = locationsToCheck.pop()
-
-            val dirN = Vector(0.0, 0.0, -1.0)
-            val dirS = Vector(0.0, 0.0, 1.0)
-            val dirE = Vector(1.0, 0.0, 0.0)
-            val dirW = Vector(-1.0, 0.0, 0.0)
-
-
-            // Directions: North, South, East, West
-            val directions = listOf(
-                tempLocation.clone().add(dirN), // North
-                tempLocation.clone().add(dirS),  // South
-                tempLocation.clone().add(dirE),  // East
-                tempLocation.clone().add(dirW)  // West
-            )
-
-
-            // Check each direction
-
-            var step = 0
-
-            for (direction in directions) {
-                step += 1
-
-                for (i in 1..bomb.bomberman.power) {
-
-                    val blockTemp: Block = direction.block
-
-                    if (blockTemp.type != Material.AIR || blockTemp.type == Material.valueOf(barrierBlocks)) {
-
-                        break // Stop if we hit a wall
-
-                    } else if (blockTemp.type == Material.valueOf(blockToBreak)) {
-
-                        blockTemp.type = Material.AIR // Destroy the oak leaves
-
-                        itemDrop(direction)
-
-                        break // Stop after destroying the first oak leaves
-
-                    } else if (blockTemp.type == Material.TNT) {
-
-                        for(bombs in placedBombs){
-
-                            val loc = bombs.value.location
-                            val tempBomb = bombs.key
-
-                            if (Utils.areLocationsEqual(loc, blockTemp.location)) {
-
-                                placedBombs.remove(tempBomb)
-
-                                locationsToCheck.push(loc)
-
-                                break
-
-                            }
-
-                        }
-
-                        break
-
-                    } else if(blockTemp.type == Material.STONE_PRESSURE_PLATE){
-
-                        break
-
-                    } else {
-
-                        // Place fire at the current block location
-                        blockTemp.type = Material.FIRE
-
-                        fireBlocks.add(blockTemp.location)
-
-                    }
-
-                    when (step) {
-
-                        1 -> {
-                            direction.add(dirN)
-                        }
-                        2 -> {
-                            direction.add(dirS)
-                        }
-                        3 -> {
-                            direction.add(dirE)
-                        }
-                        4 -> {
-                            direction.add(dirW)
-                        }
-
-                    }
-
-                }
-
-            }
-
-            tempLocation.block.type = Material.FIRE
-            fireBlocks.add(tempLocation)
-
-        }
-
-        RemovefireTask(this, fireBlocks).apply { runTaskLater(Bomberman.instance, 20L) }
-
-        if(placedBombs.containsValue(bomb)){
-
-            placedBombs.remove(bomb.location)
-
-        }
-
-    }
-
     fun removeAllFireBlocks(fireBlocks: List<Location>) {
 
         for (location in fireBlocks) {
+
+            fireBlocksToCheck.remove(location)
 
             val block = location.block
 
@@ -353,58 +262,6 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
 
             }
 
-        }
-
-    }
-
-    private fun itemDrop(location: Location){
-
-        var item: ItemStack? = null
-
-        val chance = Random().nextInt(0,1000)
-
-        if(chance <= 5){
-
-            val netherStar = ItemStack(Material.NETHER_STAR)
-
-            item = netherStar
-
-        } else if(chance <= 25){
-
-            val shovel = items.shovel
-
-            val boots = items.boots
-
-            val pressurePlate = items.landMine
-
-            val items = arrayOf(shovel, boots, pressurePlate)
-
-            item = items.random()
-
-        } else if(chance <= 55) {
-
-            val feather = ItemStack(Material.FEATHER)
-            val witherSkull = ItemStack(Material.WITHER_SKELETON_SKULL)
-
-            val items = arrayOf(feather, witherSkull)
-
-            item = items.random()
-
-        } else if(chance <= 85){
-
-            val blaze = ItemStack(Material.BLAZE_POWDER)
-
-            val tnt = items.bomb
-
-            val items = arrayOf(blaze, tnt)
-
-            item = items.random()
-
-        }
-
-        if (item != null) {
-            val task = DropitemTask(this, location, item)
-            task.apply { runTaskLater(Bomberman.instance, 22L) }
         }
 
     }
@@ -544,7 +401,7 @@ class Game(val gameFile: YamlConfiguration, val status: GameState) {
             location.block.type = Material.AIR
 
             placedBombs[location] = bomb
-            checkAndDestroyBomb(bomb)
+            Bukkit.getPluginManager().callEvent(TriggerBombEvent(bomb, this))
 
         }
 

@@ -2,6 +2,7 @@ package me.luhen.bomberman.tasks
 
 import me.luhen.bomberman.Bomberman
 import me.luhen.bomberman.enums.EliminationType
+import me.luhen.bomberman.enums.GameState
 import me.luhen.bomberman.events.custom.PlayerLeaveGameEvent
 import me.luhen.bomberman.game.Game
 import me.luhen.bomberman.utils.Utils
@@ -23,45 +24,56 @@ class CheckingTask(val game: Game): BukkitRunnable() {
 
             val bomberman = player.value
 
-            if (blockBelow.type == Material.FIRE) {
-                // Player is standing above fire
+            if(game.status == GameState.RUNNING) {
 
-                if(!bomberman.isInvincible){
+                if (blockBelow.type == Material.FIRE) {
+                    // Player is standing above fire
 
-                    if(bomberman.lifes == 1){
+                    if (!bomberman.isInvincible) {
 
-                        Bukkit.getPluginManager().callEvent(PlayerLeaveGameEvent(player.key, game, EliminationType.REGULAR))
+                        if (bomberman.lifes == 1) {
 
-                    } else {
+                            Bukkit.getPluginManager()
+                                .callEvent(PlayerLeaveGameEvent(player.key, game, EliminationType.REGULAR))
 
-                        game.bombermans[player.key]?.let { it.isInvincible = true }
-                        game.bombermans[player.key]?.let { it.lifes -= 1 }
-                        VisualUtils.sendComponent(Bomberman.instance.messages["life-lost-message"].toString(), player.key)
+                        } else {
 
-                        RemovelifeTask(game, player.key)
+                            game.bombermans[player.key]?.let { it.isInvincible = true }
+                            game.bombermans[player.key]?.let { it.lifes -= 1 }
+                            VisualUtils.sendComponent(
+                                Bomberman.instance.messages["life-lost-message"].toString(),
+                                player.key
+                            )
 
-                    }
+                            val task = RemovelifeTask(game, player.key)
+                            task.apply { runTaskLater(Bomberman.instance, 100L) }
 
-                }
-
-            } else if(blockBelow.type == Material.STONE_PRESSURE_PLATE){
-
-                if(!bomberman.isInvincible){
-
-                    if(bomberman.lifes == 1){
-
-                        Bukkit.getPluginManager().callEvent(PlayerLeaveGameEvent(player.key, game, EliminationType.REGULAR))
-
-                    } else {
-
-                        RemovelifeTask(game, player.key)
+                        }
 
                     }
 
-                }
+                } else if (blockBelow.type == Material.STONE_PRESSURE_PLATE) {
 
-                //Execute the landmine
-                game.checkAndDestroyLandmine(Utils.locationInInt(player.key.location))
+                    if (!bomberman.isInvincible) {
+
+                        if (bomberman.lifes == 1) {
+
+                            Bukkit.getPluginManager()
+                                .callEvent(PlayerLeaveGameEvent(player.key, game, EliminationType.REGULAR))
+
+                        } else {
+
+                            val task = RemovelifeTask(game, player.key)
+                            task.apply { runTaskLater(Bomberman.instance, 100L) }
+
+                        }
+
+                    }
+
+                    //Execute the landmine
+                    game.checkAndDestroyLandmine(Utils.locationInInt(player.key.location))
+
+                }
 
             }
         }

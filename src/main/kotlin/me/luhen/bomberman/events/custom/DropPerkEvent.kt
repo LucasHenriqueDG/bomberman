@@ -1,11 +1,11 @@
 package me.luhen.bomberman.events.custom
 
 import me.luhen.bomberman.game.Game
-import org.bukkit.entity.Player
+import org.bukkit.Location
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
 
-class PlayerJoinGameEvent(val player: Player, val game: Game) : Event() {
+class DropPerkEvent(val location: Location, val game: Game): Event() {
 
     companion object {
 

@@ -4,7 +4,6 @@ import me.luhen.bomberman.Bomberman
 import me.luhen.bomberman.enums.GameState
 import me.luhen.bomberman.game.Game
 import me.luhen.bomberman.utils.PlaceholderUtils
-import me.luhen.bomberman.visual.VisualUtils
 import net.kyori.adventure.bossbar.BossBar
 import org.bukkit.scheduler.BukkitRunnable
 
@@ -19,8 +18,12 @@ class BossbarTask(val game: Game): BukkitRunnable() {
             game.currentDelay.toString()
         )
 
-        //Send bossbar to players
-        VisualUtils.sendBossBar(message, game.players, 1.0f, color)
+        //Update bossbar to players
+        game.bossBar.currentColor = color
+        game.bossBar.currentMessage = message
+        game.bossBar.updateName()
+
         game.currentDelay -= 1
+
     }
 }

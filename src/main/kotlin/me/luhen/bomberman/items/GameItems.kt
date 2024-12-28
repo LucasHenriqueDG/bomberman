@@ -15,11 +15,13 @@ class GameItems(game: Game){
     lateinit var boots: ItemStack
     lateinit var shovel: ItemStack
     lateinit var landMine: ItemStack
+    lateinit var clock: ItemStack
 
     private val bootsName = game.gameFile.getString("boots-name")
     private val shovelName = game.gameFile.getString("shovel-name")
     private val mineName = game.gameFile.getString("landmine-name")
     private val bombName = game.gameFile.getString("bomb-name")
+    private val clockName = game.gameFile.getString("clock-name")
 
     private fun createItems(){
 
@@ -35,6 +37,9 @@ class GameItems(game: Game){
         val landMineTemp = ItemStack(Material.STONE_PRESSURE_PLATE)
         val landMineMeta = landMineTemp.itemMeta
 
+        val clockTemp = ItemStack(Material.CLOCK)
+        val clockMeta = clockTemp.itemMeta
+
         bombMeta?.setDisplayName(bombName)
         bombTemp.itemMeta = bombMeta
 
@@ -47,10 +52,14 @@ class GameItems(game: Game){
         landMineMeta?.setDisplayName(mineName)
         landMineTemp.itemMeta = landMineMeta
 
+        clockMeta?.setDisplayName(clockName)
+        clockTemp.itemMeta = clockMeta
+
         bomb = bombTemp
         boots = bootsTemp
         shovel = shovelTemp
         landMine = landMineTemp
+        clock = clockTemp
 
     }
 

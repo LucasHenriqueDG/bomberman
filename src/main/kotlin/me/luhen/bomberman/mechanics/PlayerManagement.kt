@@ -3,6 +3,7 @@ package me.luhen.bomberman.mechanics
 import me.luhen.bomberman.Bomberman
 import me.luhen.bomberman.events.custom.PlayerJoinGameEvent
 import me.luhen.bomberman.game.Game
+import me.luhen.bomberman.utils.DataUtils
 import me.luhen.bomberman.visual.VisualUtils
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -16,13 +17,23 @@ object PlayerManagement {
     }
 
     fun removeFromArena(game: Game, player: Player){
-        game.gameFile.getLocation("exit")?.let { exit ->
-            game.bombermans.remove(player)
-            player.inventory.clear()
-            player.teleport(exit)
-            player.gameMode = GameMode.SURVIVAL
-            Bomberman.instance.playersPlaying.remove(player)
+
+        player.activePotionEffects.forEach {
+            player.removePotionEffect(it.type)
         }
+        game.players.remove(player)
+
+        game.bossBar.removeViewer(player)
+        Bomberman.instance.scoreboards[player]?.remove()
+
+        DataUtils.getLocationFromFile(game.gameFile, "exit").let { exit ->
+            player.teleport(exit)
+        }
+
+        player.inventory.clear()
+        player.gameMode = GameMode.SURVIVAL
+        Bomberman.instance.playersPlaying.remove(player)
+
     }
 
     fun movePlayersFromQueue(game: Game){

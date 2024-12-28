@@ -37,6 +37,8 @@ class PickupItemListener: Listener {
 
                             VisualUtils.sendComponent(Bomberman.instance.messages["extra-bomb-message"].toString(), player)
 
+                            Bomberman.instance.scoreboards[player]?.update()
+
                         }
 
                         Material.STONE_PRESSURE_PLATE -> {
@@ -53,6 +55,7 @@ class PickupItemListener: Listener {
                             }
 
                             game.bombermans[player]?.let{ it.landMines += 1 }
+                            Bomberman.instance.scoreboards[player]?.update()
 
                         }
 
@@ -63,6 +66,7 @@ class PickupItemListener: Listener {
                             item.remove()
 
                             VisualUtils.sendComponent(Bomberman.instance.messages["extra-power-message"].toString(), player)
+                            Bomberman.instance.scoreboards[player]?.update()
 
                         }
 
@@ -128,6 +132,22 @@ class PickupItemListener: Listener {
                             event.isCancelled = true
                             item.remove()
 
+                        }
+
+                        Material.CLOCK -> {
+
+                            game.bombermans[player]?.let { it.hasTimer = true }
+
+                            if (!player.inventory.contains(item.itemStack)) {
+
+                                VisualUtils.sendComponent(Bomberman.instance.messages["clock-message"].toString(), player)
+
+                            } else {
+
+                                event.isCancelled = true
+                                item.remove()
+
+                            }
                         }
 
                         else -> {}
